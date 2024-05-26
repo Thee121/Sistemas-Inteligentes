@@ -1,3 +1,10 @@
-Proyecto de sistemas inteligentes de la universidad Politecnica de madrid.
+Proyecto de sistemas inteligentes, ETSIINF, UPM.
 
-Usando la libreria Jade, implementa un sistema de supermercados utilizando diversos Agentes.
+Autores:
+Luis Barrós Martínez 
+Alberto Barranquero Fernandez
+Diego Montañez Soria
+Eduardo Miralles Ciordia
+
+
+Usando la libreria Jade, implementa un sistema de supermercados utilizando varios Agentes.
