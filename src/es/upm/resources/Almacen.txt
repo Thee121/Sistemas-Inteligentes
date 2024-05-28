@@ -1,0 +1,90 @@
+Fruta,Manzanas,50
+Fruta,Plátanos,30
+Fruta,Naranjas,40
+Fruta,Uvas,25
+Fruta,Fresas,15
+Fruta,Arándanos,20
+Fruta,Sandía,10
+Fruta,Piña,8
+Fruta,Mangos,12
+Fruta,Duraznos,18
+Fruta,Cerezas,22
+Fruta,Granadas,9
+Fruta,Peras,17
+Fruta,Ciruelas,14
+Fruta,Kiwi,16
+Fruta,Papaya,11
+Fruta,Melocotones,13
+Fruta,Limones,19
+Fruta,Mandarinas,21
+Fruta,Moras,23
+Carne,Res,15
+Carne,Cerdo,20
+Carne,Pollo,25
+Carne,Cordero,10
+Carne,Pavo,12
+Carne,Pato,8
+Carne,Cabra,7
+Carne,Conejo,5
+Carne,Ternera,9
+Carne,Bisonte,6
+Carne,Venado,11
+Carne,Chorizo,14
+Carne,Morcilla,13
+Carne,Salchicha,22
+Carne,Jabalí,4
+Pescado,Salmón,10
+Pescado,Atún,12
+Pescado,Trucha,8
+Pescado,Bacalao,15
+Pescado,Merluza,9
+Pescado,Arenque,7
+Pescado,Caballa,14
+Pescado,Sardinas,20
+Pescado,Pez Espada,5
+Pescado,Anchoas,22
+Pescado,Lenguado,11
+Pescado,Pargo Rojo,13
+Pescado,Dorado,16
+Pescado,Raya,4
+Pescado,Bonito,18
+Verdura,Zanahorias,30
+Verdura,Tomates,25
+Verdura,Lechuga,20
+Verdura,Espinacas,15
+Verdura,Brócoli,18
+Verdura,Coliflor,10
+Verdura,Papas,40
+Verdura,Cebollas,35
+Verdura,Ajo,22
+Verdura,Pimientos,27
+Verdura,Calabacín,14
+Verdura,Pepinos,17
+Verdura,Judías Verdes,12
+Verdura,Guisantes,19
+Verdura,Espárragos,9
+Verdura,Remolacha,11
+Verdura,Chícharos,24
+Verdura,Calabaza,28
+Verdura,Repollo,16
+Verdura,Nabos,13
+Lácteos,Leche,50
+Lácteos,Queso,30
+Lácteos,Yogur,20
+Lácteos,Mantequilla,25
+Lácteos,Nata,15
+Lácteos,Helado,10
+Lácteos,Crema,18
+Lácteos,Requesón,22
+Lácteos,Leche Condensada,12
+Lácteos,Leche Desnatada,17
+Bebidas,Agua,100
+Bebidas,Zumo de Naranja,40
+Bebidas,Zumo de Manzana,35
+Bebidas,Refresco de Cola,60
+Bebidas,Té,45
+Bebidas,Café,50
+Bebidas,Cerveza,70
+Bebidas,Vino Tinto,80
+Bebidas,Vino Blanco,65
+Bebidas,Limonada,55

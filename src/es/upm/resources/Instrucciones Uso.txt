@@ -1,0 +1,9 @@
+1) Accede a "Run --> Run cunfiguration"
+2) En nombre, pon: "LeeEscribeAlmacenAgente"
+3) En la pestaña main:
+	3.1) En projecto, escoger "Sistemas-Inteligentes"
+	3.2) En Main class, escoger "jade.Boot"
+4) En la pestaña Arguments:
+	4.1) poner en program arguments: "-gui LeeEscribeAlmacenAgente:es.upm.supermercado.LeeEscribeAlmacenAgente(\src\es\upm\resources\Almacen.txt)"
+5) Asegurarse de que las librerias "commons-codec-1.3" y "jade" están referenciadas
+6) Correr el programa.
