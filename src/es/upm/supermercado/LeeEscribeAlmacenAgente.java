@@ -1,6 +1,9 @@
 package es.upm.supermercado;
 
 import jade.core.Agent;
+import jade.core.AgentContainer;
+import jade.wrapper.*;
+
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,7 +13,7 @@ import java.util.*;
 
 public class LeeEscribeAlmacenAgente extends Agent {
 	private static final long serialVersionUID = 4395092232132395178L;
-	private Map<String, Integer> almacen = new HashMap<String, Integer>();;
+	private static Map<String, Integer> inventario = new HashMap<String, Integer>();
 
 	public void setup() {
 		String line;
@@ -21,32 +24,45 @@ public class LeeEscribeAlmacenAgente extends Agent {
 		} else {
 			System.out.println("Agente JADE con Parametros: Soy el agente " + getLocalName());
 			String path = new File("").getAbsolutePath();
-			String directorio = (String)listaparametros[0];
+			String directorio = (String) listaparametros[0];
 			path = path + directorio;
-	        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-	            br.readLine();
+			try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+				br.readLine();
 
-	            while ((line = br.readLine()) != null) {
-	                // Separar la línea por comas
-	                String[] item = line.split(cvsSplitBy);
+				while ((line = br.readLine()) != null) {
+					// Separar la línea por comas
+					String[] item = line.split(cvsSplitBy);
 
-	                // Obtener el nombre del elemento y la cantidad
-	                String elemento = item[1];
-	                int cantidad = Integer.parseInt(item[2]);
+					// Obtener el nombre del elemento y la cantidad
+					String elemento = item[1];
+					int cantidad = Integer.parseInt(item[2]);
 
-	                // Guardar en el mapa
-	                almacen.put(elemento, cantidad);
-	            }
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
-	        System.out.println(almacen.toString());
-			//doDelete();
+					// Guardar en el mapa
+					inventario.put(elemento, cantidad);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+		jade.wrapper.AgentContainer container= getContainerController();
+		Object[] params=new Object[1];
+		params[0]="nuevo_parametro";
+		try{
+		AgentController agnt=container.createNewAgent("GuiAgente", "es.upm.supermercado.GuiAgente", params);
+		agnt.start();
+		}
+		catch(Exception e){e.printStackTrace();}
 	}
-	
-	//Solo se utiliza al llamar al método doDelete();
+
 	protected void takeDown() {
 		System.out.println("Apagando Agente LeeEscribeAlmacen");
+	}
+
+	public static Map<String, Integer> getInventario() {
+		return LeeEscribeAlmacenAgente.inventario;
+	}
+
+	public static void setInventario(Map<String, Integer> almacen) {
+		LeeEscribeAlmacenAgente.inventario = almacen;
 	}
 }
