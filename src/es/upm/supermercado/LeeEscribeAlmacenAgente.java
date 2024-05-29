@@ -31,7 +31,7 @@ public class LeeEscribeAlmacenAgente extends Agent {
                 br.readLine();
 
                 while ((line = br.readLine()) != null) {
-                    // Separar la línea por comas
+                    // Separar la lÃ­nea por comas
                     String[] item = line.split(cvsSplitBy);
 
                     // Obtener el nombre del elemento y la cantidad
