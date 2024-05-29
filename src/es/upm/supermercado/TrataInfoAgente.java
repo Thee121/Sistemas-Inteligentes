@@ -16,6 +16,7 @@ import java.util.Map;
 public class TrataInfoAgente extends Agent {
     private static final long serialVersionUID = -5513148827856003070L;
     private static Map<String, Integer> inventario;
+    static String rutaArchivo = "";
 
     public void setup() {
         System.out.println("Agente JADE con Parametros. Inicializado el agente: " + getLocalName());
@@ -59,7 +60,6 @@ public class TrataInfoAgente extends Agent {
     }
 
     private void actualizarArchivoInventario() {
-        String rutaArchivo = "C:\\Users\\abarr\\Downloads\\Sistemas-Inteligentes-main\\Sistemas-Inteligentes-main\\src\\es\\upm\\resources\\Almacen.txt";  // Puedes cambiar esto a la ruta deseada
         File archivo = new File(rutaArchivo);
 
         try {
@@ -96,10 +96,16 @@ public class TrataInfoAgente extends Agent {
     }
 
     public static Map<String, Integer> getInventario() {
-        return inventario;
+        return TrataInfoAgente.inventario;
     }
 
     public static void setInventario(Map<String, Integer> inventario) {
         TrataInfoAgente.inventario = inventario;
+    }
+    public static String getrutaArchivo() {
+    	return TrataInfoAgente.rutaArchivo;
+    }
+    public static void setrutaArchivo(String archivo) {
+    	TrataInfoAgente.rutaArchivo = archivo;
     }
 }

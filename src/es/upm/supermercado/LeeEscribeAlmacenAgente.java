@@ -13,20 +13,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class LeeEscribeAlmacenAgente extends Agent {
-    private static final long serialVersionUID = 4395092232132395178L;
-    private static Map<String, Integer> inventario = new HashMap<String, Integer>();
+	private static final long serialVersionUID = 4395092232132395178L;
+	private static Map<String, Integer> inventario = new HashMap<String, Integer>();
+	String path = new File("").getAbsolutePath();
 
-    public void setup() {
+	public void setup() {
+        System.out.println("Agente JADE con Parametros. Inicializado el agente: " + getLocalName());
         String line;
         String cvsSplitBy = ",";
-        Object[] listaparametros = getArguments();
-        if ((listaparametros == null) || (listaparametros.length < 1)) {
-            System.out.println("No se han introducido parametros");
-        } else {
-            System.out.println("Agente JADE con Parametros. Inicializado el agente: " + getLocalName());
-            String path = new File("").getAbsolutePath();
-            String directorio = (String) listaparametros[0];
+
+            String directorio = "\\src\\es\\upm\\resources\\Almacen.txt";
             path = path + directorio;
+            TrataInfoAgente.setrutaArchivo(path);
             try (BufferedReader br = new BufferedReader(new FileReader(path))) {
                 br.readLine();
 
@@ -44,7 +42,7 @@ public class LeeEscribeAlmacenAgente extends Agent {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        
 
         // Start the GuiAgente
         jade.wrapper.AgentContainer container = getContainerController();
@@ -65,38 +63,39 @@ public class LeeEscribeAlmacenAgente extends Agent {
             e.printStackTrace();
         }
         sendInventoryToTrataInfoAgente();
-    }
+	}
 
-    protected void takeDown() {
-        System.out.println("Apagando Agente LeeEscribeAlmacen");
-    }
+	protected void takeDown() {
+		System.out.println("Apagando Agente LeeEscribeAlmacen");
+	}
 
-    private void sendInventoryToGuiAgent() {
-        try {
-            ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-            msg.addReceiver(new AID("GuiAgente", AID.ISLOCALNAME));
-            msg.setContentObject((HashMap<String, Integer>) inventario);
-            send(msg);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    private void sendInventoryToTrataInfoAgente() {
-        try {
-            ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-            msg.addReceiver(new AID("TrataInfoAgente", AID.ISLOCALNAME));
-            msg.setContentObject((HashMap<String, Integer>) inventario);
-            send(msg);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+	private void sendInventoryToGuiAgent() {
+		try {
+			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			msg.addReceiver(new AID("GuiAgente", AID.ISLOCALNAME));
+			msg.setContentObject((HashMap<String, Integer>) inventario);
+			send(msg);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-    public static Map<String, Integer> getInventario() {
-        return LeeEscribeAlmacenAgente.inventario;
-    }
+	private void sendInventoryToTrataInfoAgente() {
+		try {
+			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			msg.addReceiver(new AID("TrataInfoAgente", AID.ISLOCALNAME));
+			msg.setContentObject((HashMap<String, Integer>) inventario);
+			send(msg);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-    public static void setInventario(Map<String, Integer> almacen) {
-        LeeEscribeAlmacenAgente.inventario = almacen;
-    }
+	public static Map<String, Integer> getInventario() {
+		return LeeEscribeAlmacenAgente.inventario;
+	}
+
+	public static void setInventario(Map<String, Integer> almacen) {
+		LeeEscribeAlmacenAgente.inventario = almacen;
+	}
 }
