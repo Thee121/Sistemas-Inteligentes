@@ -24,7 +24,8 @@ public class GuiAgente extends Agent {
 	JFrame framePropietario;
 	JPanel panelAux;
 	JPanel frutasPanel;
-	
+	JPanel panelPrincipal;
+
 	private static Map<String, Integer> inventario;
 	private static Map<Integer, String> historialPedidos = new ConcurrentHashMap<>();
 	private static Map<String, Integer> pedido = new HashMap<>();
@@ -33,22 +34,28 @@ public class GuiAgente extends Agent {
 	private String codigoCancelar = "";
 
 	public void setup() {
+		// Creacion de frameUsuario
 		frameUsuario = new JFrame("Inventario del Supermercado");
 		frameUsuario.setTitle("Inventario del Supermercado");
 		frameUsuario.setSize(800, 600);
 		frameUsuario.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frameUsuario.setLocationRelativeTo(null);
-		
+		frameUsuario.setVisible(false);
 		frutasPanel = new JPanel(new BorderLayout());
 		panelAux = new JPanel();
-
-
-
 		JScrollPane scrollPane = new JScrollPane(panelAux);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Aumenta la velocidad del scroll
 		frutasPanel.add(scrollPane, BorderLayout.CENTER);
 
 		SwingUtilities.invokeLater(() -> {
+			JButton atrasBoton = new JButton("ATRAS");
+			atrasBoton.setFont(new Font("Arial", Font.BOLD, 14));
+			atrasBoton.setFocusPainted(false);
+			atrasBoton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			atrasBoton.addActionListener(e -> {
+				frameInicial.setVisible(true);
+				frameUsuario.setVisible(false);
+			});
 			panelAux.setLayout(new GridLayout(0, 3, 10, 10)); // 0 rows, 4 columns, 10px horizontal and vertical gaps
 			panelAux.setBorder(new EmptyBorder(10, 10, 10, 10));
 			JTextField textField = new JTextField("Inventario de Supermercado", 20);
@@ -57,9 +64,40 @@ public class GuiAgente extends Agent {
 			textField.setFont(new Font("Arial", Font.BOLD, 16));
 			textField.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 			frutasPanel.add(textField, BorderLayout.NORTH);
+			frutasPanel.add(atrasBoton, BorderLayout.WEST);
 			frameUsuario.add(frutasPanel);
+		});
+		// Creacion de FrameInicial
+		frameInicial = new JFrame("Menu Inicial de Fruteria");
+		frameInicial.setTitle("Menu Inicial");
+		frameInicial.setSize(800, 600);
+		frameInicial.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frameInicial.setLocationRelativeTo(null);
+		frameInicial.setVisible(true);
+		panelPrincipal = new JPanel(new BorderLayout());
+
+		JButton clienteBoton = new JButton("Cliente");
+		clienteBoton.setFont(new Font("Arial", Font.BOLD, 14));
+		clienteBoton.setFocusPainted(false);
+		clienteBoton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		clienteBoton.addActionListener(e -> {
+			frameInicial.setVisible(false);
 			frameUsuario.setVisible(true);
 		});
+		JButton propietarioBoton = new JButton("Propietario");
+		propietarioBoton.setFont(new Font("Arial", Font.BOLD, 14));
+		propietarioBoton.setFocusPainted(false);
+		propietarioBoton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		propietarioBoton.addActionListener(e -> {
+			frameInicial.setVisible(true);
+			frameUsuario.setVisible(false);
+		});
+		JLabel PrincipalLabel = new JLabel("Menu Principal");
+		panelPrincipal.add(PrincipalLabel, BorderLayout.CENTER);
+		panelPrincipal.add(propietarioBoton, BorderLayout.NORTH);
+		panelPrincipal.add(clienteBoton, BorderLayout.SOUTH);
+		frameInicial.add(panelPrincipal);
+
 		addBehaviour(new CyclicBehaviour() {
 			private static final long serialVersionUID = 9090607020824006811L;
 
@@ -298,7 +336,8 @@ public class GuiAgente extends Agent {
 			int idPedido = Integer.parseInt(codigoPedido.trim());
 			if (historialPedidos.containsKey(idPedido)) {
 				String pedido = historialPedidos.get(idPedido);
-				JOptionPane.showMessageDialog(frameUsuario, pedido, "Detalle del Pedido", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(frameUsuario, pedido, "Detalle del Pedido",
+						JOptionPane.INFORMATION_MESSAGE);
 			} else {
 				JOptionPane.showMessageDialog(frameUsuario, "No hay un pedido con el número " + idPedido, "Error",
 						JOptionPane.ERROR_MESSAGE);
