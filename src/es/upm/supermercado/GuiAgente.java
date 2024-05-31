@@ -2,8 +2,14 @@ package es.upm.supermercado;
 
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.content.lang.sl.SLCodec;
 import jade.core.AID;
 import javax.swing.*;
 
@@ -27,46 +33,51 @@ public class GuiAgente extends Agent {
 	public void setup() {
 		InterfazGrafica gui = new InterfazGrafica();
 
+		// Crear servicios proporcionados por el agente y registrarlos en la plataforma
+		DFAgentDescription dfd = new DFAgentDescription();
+		dfd.setName(getAID());
+		ServiceDescription sd = new ServiceDescription();
+		sd.setName("InformacionInicial");
+		// establezco el tipo del servicio “buscar” para poder localizarlo cuando haga
+		// una busqueda
+		sd.setType("Inicial");
+		sd.addOntologies("ontologia");
+		sd.addLanguages(new SLCodec().getName());
+		dfd.addServices(sd);
+		try {
+			// registro el servicio en el DF
+			DFService.register(this, dfd);
+		} catch (FIPAException e) {
+			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
+		}
 		addBehaviour(new CyclicBehaviour() {
 			private static final long serialVersionUID = 9090607020824006811L;
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public void action() {
-				ACLMessage msg = receive();
-				if (msg != null) {
-					try {
-						if ((msg.getPerformative() == ACLMessage.INFORM)) {
-							GuiAgente.setInventario((Map<String, Integer>) msg.getContentObject());
-							SwingUtilities.invokeLater(() -> {
-								gui.actualizarUICliente();
-								gui.actualizarUIPropietario();
-							});
-						} else if (msg.getPerformative() == ACLMessage.REQUEST) {
-							// Rellenar con condiciones necesarias
-						}
-
-					} catch (UnreadableException e) {
-						e.printStackTrace();
-					}
+				ACLMessage msg = this.myAgent.blockingReceive(MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
+				if ((msg == null)) {
+					System.out.println("No se han introducido parametros");
 				} else {
-					block();
+					try {
+						System.out.println("Agente JADE con Parametros: Soy el agente " + getLocalName());
+
+						ConcurrentHashMap<String, Integer> mapaInicial = new ConcurrentHashMap<String, Integer>();
+						mapaInicial = (ConcurrentHashMap<String, Integer>) msg.getContentObject();
+						GuiAgente.setInventario(mapaInicial);
+						SwingUtilities.invokeLater(() -> {
+							gui.actualizarUICliente();
+							gui.actualizarUIPropietario();
+						});
+					} catch (UnreadableException e) {
+						e.getMessage();
+					}
 				}
+
 			}
 		});
 	}
-
-	private void sendInventoryToTrataInfoAgente() {
-		try {
-			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-			msg.addReceiver(new AID("TrataInfoAgente", AID.ISLOCALNAME));
-			msg.setContentObject((HashMap<String, Integer>) inventario);
-			send(msg);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	protected void takeDown() {
 		System.out.println("Apagando Agente" + getLocalName());
 	}

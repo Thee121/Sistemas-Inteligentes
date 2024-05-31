@@ -220,7 +220,7 @@ public class InterfazGrafica {
 			quantitySlider.addChangeListener(e -> {
 				int value = quantitySlider.getValue();
 				quantityField.setText(String.valueOf(value));
-				GuiAgente.getPedido().put(entry.getKey(), value);
+				GuiAgente.setPedidoElem(entry.getKey(), value);
 			});
 
 			quantityField.addActionListener(e -> {
