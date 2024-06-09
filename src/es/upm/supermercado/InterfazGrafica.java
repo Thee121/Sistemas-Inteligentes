@@ -416,10 +416,10 @@ public class InterfazGrafica {
 
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		panel.add(new JLabel("�Seguro que quieres cancelar el pedido?"));
+		panel.add(new JLabel("¿Seguro que quieres cancelar el pedido?"));
 
 		// Devuelve:
-		// 0 - Si�
+		// 0 - Si­
 		// 1 - No
 		// 2 - Cancelar
 		int option = JOptionPane.showConfirmDialog(frameUsuario, panel);
@@ -444,11 +444,11 @@ public class InterfazGrafica {
 		} while (GuiAgente.getHistorialPedidos().containsKey(idPedido));
 		GuiAgente.setHistorialPedidosElem(pedidoToString(GuiAgente.getPedido()), idPedido);
 
-		// Crear un panel para el mensaje de confirmación
+		// Crear un panel para el mensaje de confirmaciÃ³n
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.add(new JLabel("Pedido realizado con Exito!"));
-		panel.add(new JLabel("�Guarda el numero bien! ID del pedido:"));
+		panel.add(new JLabel("¡Guarda el numero bien! ID del pedido:"));
 
 		JTextField idField = new JTextField(String.valueOf(idPedido));
 		idField.setEditable(false);
@@ -458,7 +458,7 @@ public class InterfazGrafica {
 		// Mostrar el panel en un JOptionPane
 		JOptionPane.showMessageDialog(frameUsuario, panel);
 
-		// Limpiar el pedido después de realizarlo
+		// Limpiar el pedido despuÃ©s de realizarlo
 		GuiAgente.getPedido().clear();
 	}
 	private static String pedidoToString(Map<String, Integer> pedido) {
