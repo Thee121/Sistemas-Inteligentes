@@ -25,6 +25,8 @@ public class Utils
 	 * @param agent Agente con el que se realiza la busqueda
 	 * @param tipo  Tipo de servidio buscado
 	 * @return Listado de agentes que proporciona el servicio
+	 * 
+	 * 
 	 */
     public static DFAgentDescription [] buscarAgentes(Agent agent, String tipo){
         //indico las caracteristicas el tipo de servicio que quiero encontrar
@@ -149,51 +151,40 @@ public class Utils
         
         return null;
     }
-	public static ConcurrentHashMap<String, Integer> LeeArchivoAlmacen(String localizacion) {
-		ConcurrentHashMap<String, Integer> lectorArchivo = new ConcurrentHashMap<String, Integer>();
-		String almacen;
-		String cvsSplitBy = ",";
-		try (BufferedReader br = new BufferedReader(new FileReader(localizacion))) {
-			br.readLine();
-
-			while ((almacen = br.readLine()) != null) {
-				// Separar la archivo por comas
-				String[] item = almacen.split(cvsSplitBy);
-
-				// Obtener el nombre del elemento y la cantidad
-				String elemento = item[0];
-				int cantidad = Integer.parseInt(item[1]);
-
-				// Guardar en el mapa
-				lectorArchivo.put(elemento, cantidad);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return lectorArchivo;
-	}
-	public static ConcurrentHashMap<Integer, String> LeeArchivoHistorial(String localizacion) {
-		ConcurrentHashMap<Integer, String> lectorArchivo = new ConcurrentHashMap<Integer, String>();
-		String almacen;
-		String cvsSplitBy = ",";
-		try (BufferedReader br = new BufferedReader(new FileReader(localizacion))) {
-			br.readLine();
-
-			while ((almacen = br.readLine()) != null) {
-				// Separar la archivo por comas
-				String[] item = almacen.split(cvsSplitBy);
-
-				// Obtener el nombre del elemento y la cantidad
-				int id = Integer.parseInt(item[0]);
-				String pedido = item[1];
-
-				// Guardar en el mapa
-				lectorArchivo.put(id, pedido);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return lectorArchivo;
-	}
+    public static ConcurrentHashMap<String, Integer> LeeArchivoAlmacen(String path) {
+        ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            String line;
+            br.readLine(); // Skip header
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 2) {
+                    String producto = parts[0].trim();
+                    Integer cantidad = Integer.parseInt(parts[1].trim());
+                    inventario.put(producto, cantidad);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return inventario;
+    }
+    
+    public static ConcurrentHashMap<Integer, String> LeeArchivoHistorial(String path) {
+        ConcurrentHashMap<Integer, String> historial = new ConcurrentHashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 2) {
+                    Integer id = Integer.parseInt(parts[0].trim());
+                    String detalle = parts[1].trim();
+                    historial.put(id, detalle);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return historial;
+    }
 }
-
