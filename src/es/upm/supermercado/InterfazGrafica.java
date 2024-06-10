@@ -12,7 +12,6 @@ import java.awt.TextField;
 import java.io.IOException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.*;

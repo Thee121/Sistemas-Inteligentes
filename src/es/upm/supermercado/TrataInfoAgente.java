@@ -1,7 +1,8 @@
 package es.upm.supermercado;
 
+import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -10,114 +11,171 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.wrapper.AgentController;
-import jade.content.lang.sl.SLCodec;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TrataInfoAgente extends Agent {
-    private static final long serialVersionUID = -5513148827856003070L;
+	private static final long serialVersionUID = -5513148827856003070L;
 
-    private static ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<String, Integer>();
-    private static ConcurrentHashMap<Integer, String> historialPedidos = new ConcurrentHashMap<Integer, String>();
+	private DFAgentDescription dfdLeeActualiza;
+	private ServiceDescription sdLeeActualiza;
 
-    static String rutaArchivo = "src/es/upm/resources/Almacen.txt";
+	private DFAgentDescription dfdGuiActualiza;
+	private ServiceDescription sdGuiActualiza;
 
-    public void setup() {
-        // Crear servicios proporcionados por el agente y registrarlos en la plataforma
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setName("InformacionInicial");
-        // establezco el tipo del servicio ‚Äúbuscar‚Äù para poder localizarlo cuando haga una b√∫squeda
-        sd.setType("Inicial");
-        sd.addOntologies("ontologia");
-        sd.addLanguages(new SLCodec().getName());
-        dfd.addServices(sd);
-        try {
-            // registro el servicio en el DF
-            DFService.register(this, dfd);
-        } catch (FIPAException e) {
-            System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
-        }
-        addBehaviour(new CyclicBehaviour() {
-            private static final long serialVersionUID = 9090607020824006811L;
+	private ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Integer, String> historialPedidos = new ConcurrentHashMap<>();
 
-            @SuppressWarnings("unchecked")
-            @Override
-            public void action() {
-            }
-        });
-        jade.wrapper.AgentContainer container = getContainerController();
-        
-        // Start the GuiAgente
-        try {
-            AgentController guiAgnt = container.createNewAgent("GuiAgente", "es.upm.supermercado.GuiAgente", null);
-            guiAgnt.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Utils.enviarMensaje(this, "Inicial", inventario);
-    }
+	private String rutaArchivoInventario = "src/es/upm/resources/Almacen.txt";
+	private String rutaArchivoHistorial = "src/es/upm/resources/HistorialPedidos.txt";
+	private Boolean datosEnviados = true;
 
-    private void procesarPedido(Map<String, Integer> pedido) {
-        System.out.println("Procesando pedido: " + pedido);
-        // Actualizar inventario
-        for (Map.Entry<String, Integer> entry : pedido.entrySet()) {
-            String item = entry.getKey();
-            int cantidad = entry.getValue();
-            int inventarioActual = inventario.getOrDefault(item, 0);
-            inventario.put(item, inventarioActual - cantidad);
-        }
-        System.out.println("Inventario actualizado: " + inventario);
+	private AID trataInfoAgenteAID = getAID();
 
-        // Guardar inventario actualizado en el archivo
-        try {
-            guardarInventarioEnArchivo();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+	public void setup() {
+		jade.wrapper.AgentContainer container = getContainerController();
 
-        // Enviar el inventario actualizado al GuiAgente
-        Utils.enviarMensaje(this, "Inicial", inventario);
-    }
+		// Start the GuiAgente
+		try {
+			AgentController guiAgnt = container.createNewAgent("GuiAgente", "es.upm.supermercado.GuiAgente", null);
+			guiAgnt.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		inicializarServicios();
+		controladorAgente();
+	}
 
-    private void guardarInventarioEnArchivo() throws IOException {
-        try (FileWriter writer = new FileWriter(rutaArchivo)) {
-            writer.write("Producto,Cantidad\n");
-            for (Map.Entry<String, Integer> entry : inventario.entrySet()) {
-                writer.write(entry.getKey() + "," + entry.getValue() + "\n");
-            }
-        }
-    }
+	private void controladorAgente() {
+		// Recibe informaciÛn de LeeEscribeAlmacente
+		addBehaviour(new TickerBehaviour(this, 1000) {
+			private static final long serialVersionUID = 3652551545563224088L;
 
-    protected void takeDown() {
-        System.out.println("Apagando Agente" + getLocalName());
-    }
+			@SuppressWarnings("unchecked")
+			@Override
+			public void onTick() {
 
-    public static Map<String, Integer> getInventario() {
-        return TrataInfoAgente.inventario;
-    }
+				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+				ACLMessage msg = receive(mt);
+				if (msg != null) {
+					try {
+						Object[] datos = (Object[]) msg.getContentObject();
+						ConcurrentHashMap<String, Integer> nuevoInventario = (ConcurrentHashMap<String, Integer>) datos[0];
+						ConcurrentHashMap<Integer, String> nuevoHistorialPedidos = (ConcurrentHashMap<Integer, String>) datos[1];
 
-    public static void setInventario(ConcurrentHashMap<String, Integer> almacen) {
-        TrataInfoAgente.inventario = almacen;
-    }
+						setInventario(nuevoInventario);
+						setHistorialPedidos(nuevoHistorialPedidos);
+						datosEnviados = false;
 
-    public static String getrutaArchivo() {
-        return TrataInfoAgente.rutaArchivo;
-    }
+					} catch (UnreadableException e) {
+						e.printStackTrace();
+					}
+				} else {
+					block();
+				}
+			}
+		});
+		try {
+			DFService.register(this, dfdLeeActualiza);
+			System.out.println("Servicio TrataInfoAgente Inicial registrado correctamente");
+		} catch (FIPAException e) {
+			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
+		}
 
-    public static void setrutaArchivo(String archivo) {
-        TrataInfoAgente.rutaArchivo = archivo;
-    }
+		// Manda informaciÛn a GuiAgente
+		addBehaviour(new TickerBehaviour(this, 1000) {
+			private static final long serialVersionUID = 6825347731815201155L;
 
-    public static Map<Integer, String> getHistorialPedidos() {
-        return historialPedidos;
-    }
+			@Override
+			public void onTick() {
+				if (datosEnviados) {
+					block();
+					return;
+				}
+				try {
+					DFAgentDescription[] result = DFService.search(myAgent, dfdGuiActualiza);
+					if (result.length > 0) {
+						AID guiAgenteAID = result[0].getName();
+						actualizaInfoGuiAgente(guiAgenteAID, inventario, historialPedidos);
+						datosEnviados = true;
+					} else {
+						System.out.println("guiAgenteAID no encontrado, reintentando...");
+						block(1000); // Reintentar despuÈs de 1 segundo
+					}
+				} catch (FIPAException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
 
-    public static void setHistorialPedidos(ConcurrentHashMap<Integer, String> historial) {
-        TrataInfoAgente.historialPedidos = historial;
-    }
+	private void actualizaInfoGuiAgente(AID agenteAID, ConcurrentHashMap<String, Integer> inventario,
+			ConcurrentHashMap<Integer, String> historialPedidos) {
+		try {
+			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			msg.addReceiver(agenteAID);
+			msg.setContentObject(new Object[] { inventario, historialPedidos });
+			send(msg);
+			System.out.println("Datos enviados al: " + agenteAID.getName() + " " + this.inventario + " y "
+					+ this.historialPedidos + " al agente: " + agenteAID.getName());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void inicializarServicios() {
+		// Servicio para actualizaciÛn estructuras desde LeeEscribeAlmacenAgente
+		dfdLeeActualiza = new DFAgentDescription();
+		sdLeeActualiza = new ServiceDescription();
+		sdLeeActualiza.setName("ActualizacionDesdeLee");
+		sdLeeActualiza.setType("TrasladoDesdeLee");
+		dfdLeeActualiza.addServices(sdLeeActualiza);
+		dfdLeeActualiza.setName(trataInfoAgenteAID);
+
+		// Servicio para actualizaciÛn informaciÛn a GuiAgente
+		dfdGuiActualiza = new DFAgentDescription();
+		sdGuiActualiza = new ServiceDescription();
+		sdGuiActualiza.setName("ActualizaciondesdeTrata");
+		sdGuiActualiza.setType("TrasladodesdeTrarta");
+		dfdGuiActualiza.addServices(sdGuiActualiza);
+		dfdGuiActualiza.setName(trataInfoAgenteAID);
+	}
+
+	protected void takeDown() {
+		System.out.println("Apagando Agente" + getLocalName());
+	}
+
+	public ConcurrentHashMap<String, Integer> getInventario() {
+		return this.inventario;
+	}
+
+	public void setInventario(ConcurrentHashMap<String, Integer> almacen) {
+		this.inventario = almacen;
+	}
+
+	public String getRutaArchivoInventario() {
+		return this.rutaArchivoInventario;
+	}
+
+	public void setRutaArchivoInventario(String archivo) {
+		this.rutaArchivoInventario = archivo;
+	}
+
+	public Map<Integer, String> getHistorialPedidos() {
+		return this.historialPedidos;
+	}
+
+	public void setHistorialPedidos(ConcurrentHashMap<Integer, String> historial) {
+		this.historialPedidos = historial;
+	}
+
+	public String getRutaArchivoHistorial() {
+		return this.rutaArchivoHistorial;
+	}
+
+	public void setRutaArchivoHistorial(String archivo) {
+		this.rutaArchivoHistorial = archivo;
+	}
 }
