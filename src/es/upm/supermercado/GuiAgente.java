@@ -18,9 +18,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class GuiAgente extends Agent {
 	private static final long serialVersionUID = -4163603376273249462L;
+	
+	private AID GuiAgenteAID = getAID();
+	private String nombreGuiAGente = getLocalName();
 
-	private DFAgentDescription dfdTrata;
+	private DFAgentDescription dfdGui;
 	private ServiceDescription sdGui;
+	private ServiceDescription sdPedidoCliente;
+	private ServiceDescription sdModificacionAdmin;
+
 
 	private static Map<String, Integer> inventario = new ConcurrentHashMap<>();
 	private static Map<Integer, String> historialPedidos = new ConcurrentHashMap<>();
@@ -31,8 +37,6 @@ public class GuiAgente extends Agent {
 	private static String codigoCancelar = "";
 	private static String propietarioClave = "admin123";
 	boolean datosRecibidos = false;
-
-	public AID GuiAgenteAID = getAID();
 
 	private InterfazGrafica gui;
 
@@ -78,30 +82,46 @@ public class GuiAgente extends Agent {
 						e.printStackTrace();
 					}
 				} else {
-					System.out.println("No se ha recibido ningun mensaje.");
+					System.out.println("No ha recibido ningun mensaje inicial el agente GuiAgente.");
 				}
 			}
 		});
-		try {
-			DFService.register(this, dfdTrata);
-			System.out.println("Servicio GuiAgente Inicial registrado correctamente");
-		} catch (FIPAException e) {
-			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
-		}
 	}
 
 	private void inicializarServicios() {
-		// Servicio para actualización estructuras desde TrataInfoAGente
-		dfdTrata = new DFAgentDescription();
+		// Descriptor del Agente Gui
+		dfdGui = new DFAgentDescription();
+		dfdGui.setName(GuiAgenteAID);
+		
+		// Servicio para escuchar la actualización procedente del agente TrataInfo
 		sdGui = new ServiceDescription();
 		sdGui.setName("ActualizaciondesdeTrata");
 		sdGui.setType("TrasladodesdeTrarta");
-		dfdTrata.addServices(sdGui);
-		dfdTrata.setName(GuiAgenteAID);
+		dfdGui.addServices(sdGui);
+
+		// Servicio para enviar el pedido al agente TrataInfoAgente
+		sdPedidoCliente = new ServiceDescription();
+		sdPedidoCliente.setName("PedidoCliente");
+		sdPedidoCliente.setType("TrasladodeGuiCliente");
+		dfdGui.addServices(sdPedidoCliente);
+		
+		// Servicio para enviar la modificación de Admin al agente TrataInfogente
+		sdModificacionAdmin = new ServiceDescription();
+		sdModificacionAdmin.setName("ModificacionAdmin");
+		sdPedidoCliente.setType("TrasladodeGuiAdmin");
+		dfdGui.addServices(sdPedidoCliente);
+		
+		//Registrar los servicios del Agente
+		try {
+			DFService.register(this, dfdGui);
+			System.out.println("Servicio " + nombreGuiAGente + " registrado correctamente");
+		} catch (FIPAException e) {
+			System.err.println("Agente " + nombreGuiAGente + ": " + e.getMessage());
+		}
 	}
 
 	protected void takeDown() {
-		System.out.println("Apagando Agente " + getLocalName());
+		System.out.println("Apagando Agente Gui");
 	}
 
 	// Getters y setters

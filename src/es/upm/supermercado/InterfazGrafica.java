@@ -418,7 +418,7 @@ public class InterfazGrafica {
 		panel.add(new JLabel("¿Seguro que quieres cancelar el pedido?"));
 
 		// Devuelve:
-		// 0 - Si­
+		// 0 - Si
 		// 1 - No
 		// 2 - Cancelar
 		int option = JOptionPane.showConfirmDialog(frameUsuario, panel);

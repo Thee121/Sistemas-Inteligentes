@@ -18,8 +18,10 @@ public class LeeEscribeAlmacenAgente extends Agent {
 	private static final long serialVersionUID = 4395092232132395178L;
 
 	public AID LeeEscribeAlmacenAGenteAID = getAID();
+	private String nombreTrataInfoAGente = getLocalName();
 
-	private DFAgentDescription dfdTrataActualiza;
+
+	private DFAgentDescription dfdLeeEscribe;
 	private ServiceDescription sdTrataActualiza;
 
 	private ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
@@ -34,7 +36,7 @@ public class LeeEscribeAlmacenAgente extends Agent {
 	private String pathHistorialPedidos = path + directorioHistorialPedidos;
 
 	public void setup() {
-		System.out.println("Agente JADE con Parametros. Inicializado el agente: " + getLocalName());
+		System.out.println("Agente JADE con Parametros. Inicializado el agente: " + nombreTrataInfoAGente);
 		setInventario(Utils.LeeArchivoAlmacen(pathInventario));
 		setHistorialPedidos(Utils.LeeArchivoHistorial(pathHistorialPedidos));
 
@@ -77,7 +79,7 @@ public class LeeEscribeAlmacenAgente extends Agent {
 					}
 
 					try {
-						DFAgentDescription[] result = DFService.search(myAgent, dfdTrataActualiza);
+						DFAgentDescription[] result = DFService.search(myAgent, dfdLeeEscribe);
 						if (result.length > 0) {
 							AID trataInfoAgenteAID = result[0].getName();
 							actualizarInfoTrataInfoAgente(trataInfoAgenteAID, inventario, historialPedidos);
@@ -113,13 +115,15 @@ public class LeeEscribeAlmacenAgente extends Agent {
 	}
 
 	private void inicializarServicios() {
+		// Descriptor del Agente TrataInfo
+		dfdLeeEscribe = new DFAgentDescription();
+		dfdLeeEscribe.setName(LeeEscribeAlmacenAGenteAID);
+		
 		// Servicio para actualizar información a TrataInfoAgente
-		dfdTrataActualiza = new DFAgentDescription();
 		sdTrataActualiza = new ServiceDescription();
 		sdTrataActualiza.setName("ActualizacionDesdeLee");
 		sdTrataActualiza.setType("TrasladoDesdeLee");
-		dfdTrataActualiza.addServices(sdTrataActualiza);
-		dfdTrataActualiza.setName(LeeEscribeAlmacenAGenteAID);
+		dfdLeeEscribe.addServices(sdTrataActualiza);
 	}
 
 	protected void takeDown() {

@@ -18,8 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TrataInfoAgente extends Agent {
 	private static final long serialVersionUID = -5513148827856003070L;
+	
+	private AID trataInfoAgenteAID = getAID();
+	private String nombreTrataInfoAGente = getLocalName();
 
-	private DFAgentDescription dfdLeeActualiza;
+	private DFAgentDescription dfdLeeEscribe;
 	private ServiceDescription sdLeeActualiza;
 
 	private DFAgentDescription dfdGuiActualiza;
@@ -31,8 +34,6 @@ public class TrataInfoAgente extends Agent {
 	private String rutaArchivoInventario = "src/es/upm/resources/Almacen.txt";
 	private String rutaArchivoHistorial = "src/es/upm/resources/HistorialPedidos.txt";
 	private Boolean datosEnviados = true;
-
-	private AID trataInfoAgenteAID = getAID();
 
 	public void setup() {
 		jade.wrapper.AgentContainer container = getContainerController();
@@ -77,12 +78,6 @@ public class TrataInfoAgente extends Agent {
 				}
 			}
 		});
-		try {
-			DFService.register(this, dfdLeeActualiza);
-			System.out.println("Servicio TrataInfoAgente Inicial registrado correctamente");
-		} catch (FIPAException e) {
-			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
-		}
 
 		// Manda información a GuiAgente
 		addBehaviour(new TickerBehaviour(this, 1000) {
@@ -126,25 +121,38 @@ public class TrataInfoAgente extends Agent {
 	}
 
 	private void inicializarServicios() {
+		
+		// Descriptor del Agente LeeEscribeAlmacen
+		dfdLeeEscribe = new DFAgentDescription();
+		dfdLeeEscribe.setName(trataInfoAgenteAID);
+		
+		// Descriptor del Agente Gui
+		dfdGuiActualiza = new DFAgentDescription();
+		dfdGuiActualiza.setName(trataInfoAgenteAID);
+		
 		// Servicio para actualización estructuras desde LeeEscribeAlmacenAgente
-		dfdLeeActualiza = new DFAgentDescription();
 		sdLeeActualiza = new ServiceDescription();
 		sdLeeActualiza.setName("ActualizacionDesdeLee");
 		sdLeeActualiza.setType("TrasladoDesdeLee");
-		dfdLeeActualiza.addServices(sdLeeActualiza);
-		dfdLeeActualiza.setName(trataInfoAgenteAID);
+		dfdLeeEscribe.addServices(sdLeeActualiza);
 
 		// Servicio para actualización información a GuiAgente
-		dfdGuiActualiza = new DFAgentDescription();
 		sdGuiActualiza = new ServiceDescription();
 		sdGuiActualiza.setName("ActualizaciondesdeTrata");
 		sdGuiActualiza.setType("TrasladodesdeTrarta");
 		dfdGuiActualiza.addServices(sdGuiActualiza);
-		dfdGuiActualiza.setName(trataInfoAgenteAID);
+
+		//Registrar los servicios del Agente
+		try {
+			DFService.register(this, dfdLeeEscribe);
+			System.out.println("Servicio " + nombreTrataInfoAGente + " registrado correctamente");
+		} catch (FIPAException e) {
+			System.err.println("Agente " + nombreTrataInfoAGente + ": " + e.getMessage());
+		}
 	}
 
 	protected void takeDown() {
-		System.out.println("Apagando Agente" + getLocalName());
+		System.out.println("Apagando Agente TrataInfo");
 	}
 
 	public ConcurrentHashMap<String, Integer> getInventario() {
