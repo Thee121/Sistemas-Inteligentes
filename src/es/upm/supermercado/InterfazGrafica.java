@@ -456,9 +456,7 @@ public class InterfazGrafica {
 
 		// Mostrar el panel en un JOptionPane
 		JOptionPane.showMessageDialog(frameUsuario, panel);
-
-		// Limpiar el pedido despuÃ©s de realizarlo
-		GuiAgente.getPedido().clear();
+		GuiAgente.setPedidoRealizado(true);
 	}
 	private static String pedidoToString(Map<String, Integer> pedido) {
 		StringBuilder sb = new StringBuilder("Producto,Cantidad\n");

@@ -25,7 +25,7 @@ public class TrataInfoAgente extends Agent {
 	private DFAgentDescription dfdLeeEscribe;
 	private ServiceDescription sdLeeActualiza;
 
-	private DFAgentDescription dfdGuiActualiza;
+	private DFAgentDescription dfdGui;
 	private ServiceDescription sdGuiActualiza;
 
 	private ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
@@ -58,7 +58,7 @@ public class TrataInfoAgente extends Agent {
 			@Override
 			public void onTick() {
 
-				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.PROPAGATE);
 				ACLMessage msg = receive(mt);
 				if (msg != null) {
 					try {
@@ -90,7 +90,7 @@ public class TrataInfoAgente extends Agent {
 					return;
 				}
 				try {
-					DFAgentDescription[] result = DFService.search(myAgent, dfdGuiActualiza);
+					DFAgentDescription[] result = DFService.search(myAgent, dfdGui);
 					if (result.length > 0) {
 						AID guiAgenteAID = result[0].getName();
 						actualizaInfoGuiAgente(guiAgenteAID, inventario, historialPedidos);
@@ -109,7 +109,7 @@ public class TrataInfoAgente extends Agent {
 	private void actualizaInfoGuiAgente(AID agenteAID, ConcurrentHashMap<String, Integer> inventario,
 			ConcurrentHashMap<Integer, String> historialPedidos) {
 		try {
-			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			ACLMessage msg = new ACLMessage(ACLMessage.PROPAGATE);
 			msg.addReceiver(agenteAID);
 			msg.setContentObject(new Object[] { inventario, historialPedidos });
 			send(msg);
@@ -127,8 +127,8 @@ public class TrataInfoAgente extends Agent {
 		dfdLeeEscribe.setName(trataInfoAgenteAID);
 		
 		// Descriptor del Agente Gui
-		dfdGuiActualiza = new DFAgentDescription();
-		dfdGuiActualiza.setName(trataInfoAgenteAID);
+		dfdGui = new DFAgentDescription();
+		dfdGui.setName(trataInfoAgenteAID);
 		
 		// Servicio para actualización estructuras desde LeeEscribeAlmacenAgente
 		sdLeeActualiza = new ServiceDescription();
@@ -140,7 +140,7 @@ public class TrataInfoAgente extends Agent {
 		sdGuiActualiza = new ServiceDescription();
 		sdGuiActualiza.setName("ActualizaciondesdeTrata");
 		sdGuiActualiza.setType("TrasladodesdeTrarta");
-		dfdGuiActualiza.addServices(sdGuiActualiza);
+		dfdGui.addServices(sdGuiActualiza);
 
 		//Registrar los servicios del Agente
 		try {

@@ -3,6 +3,7 @@ package es.upm.supermercado;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -11,6 +12,8 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import javax.swing.*;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -29,14 +32,17 @@ public class GuiAgente extends Agent {
 
 
 	private static Map<String, Integer> inventario = new ConcurrentHashMap<>();
-	private static Map<Integer, String> historialPedidos = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<Integer, String> historialPedidos = new ConcurrentHashMap<>();
 	private static Map<String, Integer> pedido = new HashMap<>();
 
 	private static Random random = new Random();
+	
 	private static String codigoPedido = "";
 	private static String codigoCancelar = "";
 	private static String propietarioClave = "admin123";
-	boolean datosRecibidos = false;
+	
+	private boolean datosRecibidos = false;
+	private static boolean pedidoRealizado = false;
 
 	private InterfazGrafica gui;
 
@@ -49,13 +55,14 @@ public class GuiAgente extends Agent {
 	}
 
 	private void controladorAgente() {
+		//Recibe Actualización del Almacen y pedidosHistorial desde TrataInfoAgente
 		addBehaviour(new TickerBehaviour(this, 1000) {
 			private static final long serialVersionUID = 9090607020824006811L;
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public void onTick() {
-				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.PROPAGATE);
 				ACLMessage msg = receive(mt);
 				if (msg != null) {
 					datosRecibidos = false;
@@ -85,6 +92,32 @@ public class GuiAgente extends Agent {
 					System.out.println("No ha recibido ningun mensaje inicial el agente GuiAgente.");
 				}
 			}
+		});
+		//Envía pedido y pedidosHistorial a TrataInfoAgente para que los procese.
+		addBehaviour(new CyclicBehaviour() {
+			private static final long serialVersionUID = -6161882159320004932L;
+
+			@Override
+			public void action() {
+				if(pedidoRealizado) {
+					try {
+						DFAgentDescription[] result = DFService.search(myAgent, dfdGui);
+						if (result.length > 0) {
+							AID guiAgenteAID = result[0].getName();
+							enviarPedidoHistorial(guiAgenteAID, pedido, historialPedidos);
+							System.out.println("nani");
+							pedidoRealizado = false;
+						} else {
+							System.out.println("guiAgenteAID no encontrado, reintentando...");
+						}
+					} catch (FIPAException e) {
+						e.printStackTrace();
+					}
+				}else{
+					block();
+				}
+			}
+			
 		});
 	}
 
@@ -119,7 +152,19 @@ public class GuiAgente extends Agent {
 			System.err.println("Agente " + nombreGuiAGente + ": " + e.getMessage());
 		}
 	}
-
+	private void enviarPedidoHistorial(AID agenteAID, Map<String, Integer> pedidoUsuario,
+			ConcurrentHashMap<Integer, String> historialPedidos) {
+		try {
+			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			msg.addReceiver(agenteAID);
+			msg.setContentObject(new Object[] { pedidoUsuario, historialPedidos });
+			send(msg);
+			System.out.println("Datos enviados al: " + agenteAID.getName() + " " + pedidoUsuario + " y "
+					+ GuiAgente.historialPedidos + " al agente: " + agenteAID.getName());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	protected void takeDown() {
 		System.out.println("Apagando Agente Gui");
 	}
@@ -177,7 +222,7 @@ public class GuiAgente extends Agent {
 		GuiAgente.historialPedidos.put(codigo, pedido);
 	}
 
-	public void setHistorialPedidos(Map<Integer, String> historial) {
+	public void setHistorialPedidos(ConcurrentHashMap<Integer, String> historial) {
 		GuiAgente.historialPedidos = historial;
 	}
 
@@ -191,5 +236,13 @@ public class GuiAgente extends Agent {
 
 	public static void setPedidoElem(String pedido, Integer codigo) {
 		GuiAgente.historialPedidos.put(codigo, pedido);
+	}
+
+	public static boolean isPedidoRealizado() {
+		return GuiAgente.pedidoRealizado;
+	}
+
+	public static void setPedidoRealizado(boolean pedidoRealizado) {
+		GuiAgente.pedidoRealizado = pedidoRealizado;
 	}
 }

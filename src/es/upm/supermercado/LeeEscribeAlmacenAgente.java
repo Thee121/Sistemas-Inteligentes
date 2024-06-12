@@ -1,5 +1,4 @@
 package es.upm.supermercado;
-
 import jade.core.Agent;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
@@ -103,7 +102,7 @@ public class LeeEscribeAlmacenAgente extends Agent {
 	private void actualizarInfoTrataInfoAgente(AID agenteAID, ConcurrentHashMap<String, Integer> inventario,
 			ConcurrentHashMap<Integer, String> historialPedidos) {
 		try {
-			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			ACLMessage msg = new ACLMessage(ACLMessage.PROPAGATE);
 			msg.addReceiver(agenteAID);
 			msg.setContentObject(new Object[] { inventario, historialPedidos });
 			send(msg);
