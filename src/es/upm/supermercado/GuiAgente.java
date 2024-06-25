@@ -15,6 +15,7 @@ import javax.swing.*;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,6 +92,9 @@ public class GuiAgente extends Agent {
 				} else {
 					System.out.println("No ha recibido ningun mensaje inicial el agente GuiAgente.");
 				}
+				if(isPedidoRealizado()) {
+					
+				}
 			}
 		});
 		//Envía pedido y pedidosHistorial a TrataInfoAgente para que los procese.
@@ -99,14 +103,14 @@ public class GuiAgente extends Agent {
 
 			@Override
 			public void action() {
-				if(pedidoRealizado) {
+				if(isPedidoRealizado()) {
 					try {
 						DFAgentDescription[] result = DFService.search(myAgent, dfdGui);
 						if (result.length > 0) {
-							AID guiAgenteAID = result[0].getName();
-							enviarPedidoHistorial(guiAgenteAID, pedido, historialPedidos);
-							System.out.println("nani");
-							pedidoRealizado = false;
+							AID trataInfoAgenteAID = result[0].getName();
+							System.out.println(trataInfoAgenteAID);
+							enviarPedidoHistorial(trataInfoAgenteAID, pedido, historialPedidos);
+							setPedidoRealizado(false);
 						} else {
 							System.out.println("guiAgenteAID no encontrado, reintentando...");
 						}
@@ -114,7 +118,7 @@ public class GuiAgente extends Agent {
 						e.printStackTrace();
 					}
 				}else{
-					block();
+					this.block(1000); // Bloquea durante 1 segundo
 				}
 			}
 			
@@ -144,12 +148,18 @@ public class GuiAgente extends Agent {
 		sdPedidoCliente.setType("TrasladodeGuiAdmin");
 		dfdGui.addServices(sdPedidoCliente);
 		
+		Iterator<?> dfdGuiIt = dfdGui.getAllServices();
+		System.out.println("Servicios disponibles en " + dfdGui.getName() + ": ");
+		while(dfdGuiIt.hasNext()) {
+			System.out.println(dfdGuiIt.next().toString());
+		}
+		
 		//Registrar los servicios del Agente
 		try {
 			DFService.register(this, dfdGui);
-			System.out.println("Servicio " + nombreGuiAGente + " registrado correctamente");
+			System.out.println("Servicio " + getLocalName() + " registrado correctamente");
 		} catch (FIPAException e) {
-			System.err.println("Agente " + nombreGuiAGente + ": " + e.getMessage());
+			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
 		}
 	}
 	private void enviarPedidoHistorial(AID agenteAID, Map<String, Integer> pedidoUsuario,
@@ -238,11 +248,11 @@ public class GuiAgente extends Agent {
 		GuiAgente.historialPedidos.put(codigo, pedido);
 	}
 
-	public static boolean isPedidoRealizado() {
+	public boolean isPedidoRealizado() {
 		return GuiAgente.pedidoRealizado;
 	}
 
-	public static void setPedidoRealizado(boolean pedidoRealizado) {
-		GuiAgente.pedidoRealizado = pedidoRealizado;
+	public static void setPedidoRealizado(boolean pedidoRealizadoNuevo) {
+		GuiAgente.pedidoRealizado = pedidoRealizadoNuevo;
 	}
 }

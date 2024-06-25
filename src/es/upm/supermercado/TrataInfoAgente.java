@@ -145,9 +145,9 @@ public class TrataInfoAgente extends Agent {
 		//Registrar los servicios del Agente
 		try {
 			DFService.register(this, dfdLeeEscribe);
-			System.out.println("Servicio " + nombreTrataInfoAGente + " registrado correctamente");
+			System.out.println("Servicio " + getLocalName() + " registrado correctamente");
 		} catch (FIPAException e) {
-			System.err.println("Agente " + nombreTrataInfoAGente + ": " + e.getMessage());
+			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
 		}
 	}
 
