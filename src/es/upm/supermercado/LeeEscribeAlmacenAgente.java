@@ -2,16 +2,21 @@ package es.upm.supermercado;
 import jade.core.Agent;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
 import jade.wrapper.AgentController;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 public class LeeEscribeAlmacenAgente extends Agent {
 	private static final long serialVersionUID = 4395092232132395178L;
@@ -36,12 +41,10 @@ public class LeeEscribeAlmacenAgente extends Agent {
 
 	public void setup() {
 		System.out.println("Agente JADE con Parametros. Inicializado el agente: " + nombreTrataInfoAGente);
-		setInventario(Utils.LeeArchivoAlmacen(pathInventario));
-		setHistorialPedidos(Utils.LeeArchivoHistorial(pathHistorialPedidos));
-
+		setInventario(LeeArchivoAlmacen(pathInventario));
+		
 		jade.wrapper.AgentContainer container = getContainerController();
 
-		// Start the TrataInfoAgente
 		try {
 			AgentController infoController = container.createNewAgent("TrataInfoAgente",
 					"es.upm.supermercado.TrataInfoAgente", null);
@@ -50,79 +53,65 @@ public class LeeEscribeAlmacenAgente extends Agent {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		addBehaviour(new RecepcionMensajeBehaviour());
 		inicializarServicios();
-		controladorAgente();
+		enviarDatosAGuiAgente();
 
 	}
-
-	private void controladorAgente() {
-		try {
-			addBehaviour(new TickerBehaviour(this, 1000) {
-				private static final long serialVersionUID = -8223053198587330126L;
-
-				protected void onTick() {
-					ConcurrentHashMap<String, Integer> nuevoInventario = Utils.LeeArchivoAlmacen(pathInventario);
-					ConcurrentHashMap<Integer, String> nuevoHistorialPedidos = Utils
-							.LeeArchivoHistorial(pathHistorialPedidos);
-
-					if (!getInventario().equals(nuevoInventario)
-							|| !getHistorialPedidos().equals(nuevoHistorialPedidos)) {
-						setInventario(nuevoInventario);
-						setHistorialPedidos(nuevoHistorialPedidos);
-						datosEnviados = false;
-					}
-					if (datosEnviados) {
-						block();
-						return;
-					}
-
-					try {
-						DFAgentDescription[] result = DFService.search(myAgent, dfdLeeEscribe);
-						if (result.length > 0) {
-							AID trataInfoAgenteAID = result[0].getName();
-							actualizarInfoTrataInfoAgente(trataInfoAgenteAID, inventario, historialPedidos);
-							datosEnviados = true;
-						} else {
-							System.out.println("trataInfoAgente no encontrado, reintentando...");
-							block(1000); // Reintentar después de 1 segundo
-						}
-					} catch (FIPAException e) {
-						e.printStackTrace();
-					}
-				}
-			});
-
-		} catch (Exception e) {
-			System.err.println("Error durante la configuracion del agente: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
-
-	private void actualizarInfoTrataInfoAgente(AID agenteAID, ConcurrentHashMap<String, Integer> inventario,
-			ConcurrentHashMap<Integer, String> historialPedidos) {
-		try {
-			ACLMessage msg = new ACLMessage(ACLMessage.PROPAGATE);
-			msg.addReceiver(agenteAID);
-			msg.setContentObject(new Object[] { inventario, historialPedidos });
-			send(msg);
-			System.out.println("Datos enviados al: " + agenteAID.getName() + " " + this.inventario + " y "
-					+ this.historialPedidos + " al agente: " + agenteAID.getName());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+	
+	 private class RecepcionMensajeBehaviour extends CyclicBehaviour {
+	        public void action() {
+	            ACLMessage msg = receive();
+	            if (msg != null) {
+	            	inventario = LeeArchivoAlmacen(pathInventario);
+	            	enviarDatosAGuiAgente();
+	            } else {
+	                block();
+	            }
+	        }
+	    }
+	
+	
+	private void enviarDatosAGuiAgente() {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        msg.addReceiver(new AID("GuiAgente", AID.ISLOCALNAME));
+        try {
+            msg.setContentObject(inventario);
+            send(msg);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 	private void inicializarServicios() {
 		// Descriptor del Agente TrataInfo
 		dfdLeeEscribe = new DFAgentDescription();
 		dfdLeeEscribe.setName(LeeEscribeAlmacenAGenteAID);
 		
-		// Servicio para actualizar información a TrataInfoAgente
+		// Servicio para actualizar informaciÃ³n a TrataInfoAgente
 		sdTrataActualiza = new ServiceDescription();
 		sdTrataActualiza.setName("ActualizacionDesdeLee");
 		sdTrataActualiza.setType("TrasladoDesdeLee");
 		dfdLeeEscribe.addServices(sdTrataActualiza);
+	}
+	
+	public static ConcurrentHashMap<String, Integer> LeeArchivoAlmacen(String path) {
+		ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
+		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+			String line;
+			br.readLine(); // Skip header
+			while ((line = br.readLine()) != null) {
+				String[] parts = line.split(",");
+				if (parts.length == 2) {
+					String producto = parts[0].trim();
+					Integer cantidad = Integer.parseInt(parts[1].trim());
+					inventario.put(producto, cantidad);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return inventario;
 	}
 
 	protected void takeDown() {
@@ -139,10 +128,6 @@ public class LeeEscribeAlmacenAgente extends Agent {
 
 	public ConcurrentHashMap<Integer, String> getHistorialPedidos() {
 		return this.historialPedidos;
-	}
-
-	public void setHistorialPedidos(ConcurrentHashMap<Integer, String> historialPedidos) {
-		this.historialPedidos = historialPedidos;
 	}
 
 }
