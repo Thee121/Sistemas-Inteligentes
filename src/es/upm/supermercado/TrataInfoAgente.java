@@ -2,6 +2,7 @@ package es.upm.supermercado;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
@@ -12,9 +13,16 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.wrapper.AgentController;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.swing.SwingUtilities;
+
 
 public class TrataInfoAgente extends Agent {
 	private static final long serialVersionUID = -5513148827856003070L;
@@ -31,8 +39,11 @@ public class TrataInfoAgente extends Agent {
 	private ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<Integer, String> historialPedidos = new ConcurrentHashMap<>();
 
-	private String rutaArchivoInventario = "src/es/upm/resources/Almacen.txt";
-	private String rutaArchivoHistorial = "src/es/upm/resources/HistorialPedidos.txt";
+	private String path = new File("").getAbsolutePath();
+	private String directorioAlmacen = "\\src\\es\\upm\\resources\\Almacen.txt";
+	private String directorioHistorialPedidos = "\\src\\es\\upm\\resources\\HistorialPedidos.txt";
+	private String pathInventario = path + directorioAlmacen;
+	private String pathHistorialPedidos = path + directorioHistorialPedidos;
 	private Boolean datosEnviados = true;
 
 	public void setup() {
@@ -45,12 +56,13 @@ public class TrataInfoAgente extends Agent {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+        addBehaviour(new RecepcionMensajeBehaviour());
 		inicializarServicios();
 		controladorAgente();
 	}
 
 	private void controladorAgente() {
-		// Recibe informaci髇 de LeeEscribeAlmacente
+		// Recibe informaci贸n de LeeEscribeAlmacente
 		addBehaviour(new TickerBehaviour(this, 1000) {
 			private static final long serialVersionUID = 3652551545563224088L;
 
@@ -78,47 +90,40 @@ public class TrataInfoAgente extends Agent {
 				}
 			}
 		});
-
-		// Manda informaci髇 a GuiAgente
-		addBehaviour(new TickerBehaviour(this, 1000) {
-			private static final long serialVersionUID = 6825347731815201155L;
-
-			@Override
-			public void onTick() {
-				if (datosEnviados) {
-					block();
-					return;
-				}
-				try {
-					DFAgentDescription[] result = DFService.search(myAgent, dfdGui);
-					if (result.length > 0) {
-						AID guiAgenteAID = result[0].getName();
-						actualizaInfoGuiAgente(guiAgenteAID, inventario, historialPedidos);
-						datosEnviados = true;
-					} else {
-						System.out.println("guiAgenteAID no encontrado, reintentando...");
-						block(1000); // Reintentar despu閟 de 1 segundo
-					}
-				} catch (FIPAException e) {
-					e.printStackTrace();
-				}
-			}
-		});
 	}
-
-	private void actualizaInfoGuiAgente(AID agenteAID, ConcurrentHashMap<String, Integer> inventario,
-			ConcurrentHashMap<Integer, String> historialPedidos) {
-		try {
-			ACLMessage msg = new ACLMessage(ACLMessage.PROPAGATE);
-			msg.addReceiver(agenteAID);
-			msg.setContentObject(new Object[] { inventario, historialPedidos });
-			send(msg);
-			System.out.println("Datos enviados al: " + agenteAID.getName() + " " + this.inventario + " y "
-					+ this.historialPedidos + " al agente: " + agenteAID.getName());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+		
+		 private class RecepcionMensajeBehaviour extends CyclicBehaviour {
+		        public void action() {
+		            ACLMessage msg = receive();
+		            if (msg != null) {
+		                try {
+		                    System.out.println("pedido recibido");
+		                    ConcurrentHashMap<String, Integer> inventario = (ConcurrentHashMap<String, Integer>) msg.getContentObject();
+		                    ConcurrentHashMap<String, Integer> inventarioNuevo= actualizarInventarioConPedido(LeeArchivoAlmacen(pathInventario), inventario);
+		                    guardarInventarioEnArchivo(pathInventario,actualizarInventarioConPedido(LeeArchivoAlmacen(pathInventario), inventario));
+		                    enviarConfirmacion();
+		                } catch (UnreadableException e) {
+		                    e.printStackTrace();
+		                } catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+		            } else {
+		                block();
+		            }
+		        }
+		    }
+		 private void enviarConfirmacion() {
+		        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+		        msg.addReceiver(new AID("LeeEscribeAlmacenAgente", AID.ISLOCALNAME));
+		        try {
+		            msg.setContentObject(true);
+		            send(msg);
+		            System.out.println("Confirmacion enviada");
+		        } catch (IOException e) {
+		            e.printStackTrace();
+		        }
+		    }
 
 	private void inicializarServicios() {
 		
@@ -130,13 +135,13 @@ public class TrataInfoAgente extends Agent {
 		dfdGui = new DFAgentDescription();
 		dfdGui.setName(trataInfoAgenteAID);
 		
-		// Servicio para actualizaci髇 estructuras desde LeeEscribeAlmacenAgente
+		// Servicio para actualizaci贸n estructuras desde LeeEscribeAlmacenAgente
 		sdLeeActualiza = new ServiceDescription();
 		sdLeeActualiza.setName("ActualizacionDesdeLee");
 		sdLeeActualiza.setType("TrasladoDesdeLee");
 		dfdLeeEscribe.addServices(sdLeeActualiza);
 
-		// Servicio para actualizaci髇 informaci髇 a GuiAgente
+		// Servicio para actualizaci贸n informaci贸n a GuiAgente
 		sdGuiActualiza = new ServiceDescription();
 		sdGuiActualiza.setName("ActualizaciondesdeTrata");
 		sdGuiActualiza.setType("TrasladodesdeTrarta");
@@ -148,6 +153,52 @@ public class TrataInfoAgente extends Agent {
 			System.out.println("Servicio " + getLocalName() + " registrado correctamente");
 		} catch (FIPAException e) {
 			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
+		}
+	}
+    
+    public ConcurrentHashMap<String, Integer> LeeArchivoAlmacen(String path) {
+		ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
+		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+			String line;
+			br.readLine(); // Skip header
+			while ((line = br.readLine()) != null) {
+				String[] parts = line.split(",");
+				if (parts.length == 2) {
+					String producto = parts[0].trim();
+					Integer cantidad = Integer.parseInt(parts[1].trim());
+					inventario.put(producto, cantidad);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return inventario;
+	}
+    
+    
+    
+    private ConcurrentHashMap<String, Integer> actualizarInventarioConPedido(ConcurrentHashMap<String, Integer> inventario, Map<String, Integer> pedido) {
+        for (Map.Entry<String, Integer> entry : pedido.entrySet()) {
+            String producto = entry.getKey();
+            int cantidadPedido = entry.getValue();
+            if (inventario.containsKey(producto)) {
+                int cantidadActual = inventario.get(producto);
+                int nuevaCantidad = cantidadActual - cantidadPedido;
+                if (nuevaCantidad < 0) {
+                    nuevaCantidad = 0; // No permitir inventario negativo
+                }
+                inventario.put(producto, nuevaCantidad);
+            }
+        }
+        return inventario;
+    }
+    
+    private void guardarInventarioEnArchivo(String pathInventario, Map<String, Integer> inventario) throws IOException {
+		try (FileWriter writer = new FileWriter(pathInventario)) {
+			writer.write("Producto,Cantidad\n");
+			for (Map.Entry<String, Integer> entry : inventario.entrySet()) {
+				writer.write(entry.getKey() + "," + entry.getValue() + "\n");
+			}
 		}
 	}
 
@@ -163,13 +214,6 @@ public class TrataInfoAgente extends Agent {
 		this.inventario = almacen;
 	}
 
-	public String getRutaArchivoInventario() {
-		return this.rutaArchivoInventario;
-	}
-
-	public void setRutaArchivoInventario(String archivo) {
-		this.rutaArchivoInventario = archivo;
-	}
 
 	public Map<Integer, String> getHistorialPedidos() {
 		return this.historialPedidos;
@@ -179,11 +223,4 @@ public class TrataInfoAgente extends Agent {
 		this.historialPedidos = historial;
 	}
 
-	public String getRutaArchivoHistorial() {
-		return this.rutaArchivoHistorial;
-	}
-
-	public void setRutaArchivoHistorial(String archivo) {
-		this.rutaArchivoHistorial = archivo;
-	}
 }
