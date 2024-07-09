@@ -19,6 +19,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.SwingUtilities;
@@ -28,7 +29,6 @@ public class TrataInfoAgente extends Agent {
 	private static final long serialVersionUID = -5513148827856003070L;
 	
 	private AID trataInfoAgenteAID = getAID();
-	private String nombreTrataInfoAGente = getLocalName();
 
 	private DFAgentDescription dfdLeeEscribe;
 	private ServiceDescription sdLeeActualiza;
@@ -44,9 +44,9 @@ public class TrataInfoAgente extends Agent {
 	private String directorioHistorialPedidos = "\\src\\es\\upm\\resources\\HistorialPedidos.txt";
 	private String pathInventario = path + directorioAlmacen;
 	private String pathHistorialPedidos = path + directorioHistorialPedidos;
-	private Boolean datosEnviados = true;
 
 	public void setup() {
+		System.out.println("Agente JADE con Parametros. Inicializado el agente: " + getName());
 		jade.wrapper.AgentContainer container = getContainerController();
 
 		// Start the GuiAgente
@@ -62,7 +62,7 @@ public class TrataInfoAgente extends Agent {
 	}
 
 	private void controladorAgente() {
-		// Recibe información de LeeEscribeAlmacente
+		// Recibe informacion de LeeEscribeAlmacente
 		addBehaviour(new TickerBehaviour(this, 1000) {
 			private static final long serialVersionUID = 3652551545563224088L;
 
@@ -80,7 +80,6 @@ public class TrataInfoAgente extends Agent {
 
 						setInventario(nuevoInventario);
 						setHistorialPedidos(nuevoHistorialPedidos);
-						datosEnviados = false;
 
 					} catch (UnreadableException e) {
 						e.printStackTrace();
@@ -93,19 +92,24 @@ public class TrataInfoAgente extends Agent {
 	}
 		
 		 private class RecepcionMensajeBehaviour extends CyclicBehaviour {
-		        public void action() {
+			private static final long serialVersionUID = 7157368655577734166L;
+
+				public void action() {
 		            ACLMessage msg = receive();
 		            if (msg != null) {
 		                try {
-		                    System.out.println("pedido recibido");
-		                    ConcurrentHashMap<String, Integer> inventario = (ConcurrentHashMap<String, Integer>) msg.getContentObject();
-		                    ConcurrentHashMap<String, Integer> inventarioNuevo= actualizarInventarioConPedido(LeeArchivoAlmacen(pathInventario), inventario);
+		                    Object[] mensaje =  (Object[]) msg.getContentObject();
+		                    int num = (int) mensaje[0];
+		                    @SuppressWarnings("unchecked")
+							ConcurrentHashMap<String, Integer> inventario = (ConcurrentHashMap<String, Integer>) mensaje[1];
+		                	mensaje[0] = num;
 		                    guardarInventarioEnArchivo(pathInventario,actualizarInventarioConPedido(LeeArchivoAlmacen(pathInventario), inventario));
+		                    System.out.println("TrataInfoAgente ha recibido el pedido: " + inventario);
+		                    guardarHistorialEnArchivo(pathHistorialPedidos,inventario, num);
 		                    enviarConfirmacion();
 		                } catch (UnreadableException e) {
 		                    e.printStackTrace();
 		                } catch (IOException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 		            } else {
@@ -119,7 +123,7 @@ public class TrataInfoAgente extends Agent {
 		        try {
 		            msg.setContentObject(true);
 		            send(msg);
-		            System.out.println("Confirmacion enviada");
+		            System.out.println("Confirmacion a LeeEscribeAlmacenAgente enviada");
 		        } catch (IOException e) {
 		            e.printStackTrace();
 		        }
@@ -135,13 +139,13 @@ public class TrataInfoAgente extends Agent {
 		dfdGui = new DFAgentDescription();
 		dfdGui.setName(trataInfoAgenteAID);
 		
-		// Servicio para actualización estructuras desde LeeEscribeAlmacenAgente
+		// Servicio para actualizacion estructuras desde LeeEscribeAlmacenAgente
 		sdLeeActualiza = new ServiceDescription();
 		sdLeeActualiza.setName("ActualizacionDesdeLee");
 		sdLeeActualiza.setType("TrasladoDesdeLee");
 		dfdLeeEscribe.addServices(sdLeeActualiza);
 
-		// Servicio para actualización información a GuiAgente
+		// Servicio para actualizacion informacion a GuiAgente
 		sdGuiActualiza = new ServiceDescription();
 		sdGuiActualiza.setName("ActualizaciondesdeTrata");
 		sdGuiActualiza.setType("TrasladodesdeTrarta");
@@ -150,7 +154,8 @@ public class TrataInfoAgente extends Agent {
 		//Registrar los servicios del Agente
 		try {
 			DFService.register(this, dfdLeeEscribe);
-			System.out.println("Servicio " + getLocalName() + " registrado correctamente");
+			System.out.println("Servicio " + dfdLeeEscribe.getName() + " registrado correctamente");
+
 		} catch (FIPAException e) {
 			System.err.println("Agente " + getLocalName() + ": " + e.getMessage());
 		}
@@ -172,6 +177,8 @@ public class TrataInfoAgente extends Agent {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+        System.out.println("TrataInventario leido del archivo. El inventario es: " + inventario);
+
 		return inventario;
 	}
     
@@ -188,17 +195,31 @@ public class TrataInfoAgente extends Agent {
                     nuevaCantidad = 0; // No permitir inventario negativo
                 }
                 inventario.put(producto, nuevaCantidad);
+                System.out.println("Inventario actualizado con el pedido: " + producto + " y cantidad: " + nuevaCantidad);
             }
         }
         return inventario;
     }
     
-    private void guardarInventarioEnArchivo(String pathInventario, Map<String, Integer> inventario) throws IOException {
+    private void guardarInventarioEnArchivo(String pathInventario, ConcurrentHashMap<String, Integer> inventario) throws IOException {
 		try (FileWriter writer = new FileWriter(pathInventario)) {
 			writer.write("Producto,Cantidad\n");
 			for (Map.Entry<String, Integer> entry : inventario.entrySet()) {
 				writer.write(entry.getKey() + "," + entry.getValue() + "\n");
 			}
+			System.out.println("Inventario guardado correctamente en el archivo");
+		}
+	}
+    private void guardarHistorialEnArchivo(String pathInventario, ConcurrentHashMap<String, Integer> inventario2, int num) throws IOException {
+		try (FileWriter writer = new FileWriter(pathInventario)) {
+			writer.write("Codigo,Pedido\n");
+	        StringBuilder sb = new StringBuilder();
+	        sb.append(num);
+	        for (Entry<String, Integer> entry : inventario2.entrySet()) {
+	            sb.append(",").append(entry.getKey()).append(",").append(entry.getValue());
+	        }
+	        writer.write(sb.toString());
+			System.out.println("HistorialPedido guardado correctamente en el archivo");
 		}
 	}
 

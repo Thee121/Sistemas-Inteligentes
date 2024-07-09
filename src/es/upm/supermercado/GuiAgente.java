@@ -21,7 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GuiAgente extends Agent {
     private static final long serialVersionUID = -4163603376273249462L;
 
-    private static Map<String, Integer> inventario = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<String, Integer> inventario = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<Integer, String> historialPedidos = new ConcurrentHashMap<>();
+
     private static ConcurrentHashMap<String, Integer> pedido = new ConcurrentHashMap<>();
     private static Random random = new Random();
     private static boolean pedidoRealizado = false;
@@ -31,6 +33,7 @@ public class GuiAgente extends Agent {
     private JPanel frutasPanel;
 
     protected void setup() {
+		System.out.println("Agente JADE con Parametros. Inicializado el agente: " + getName());
         crearFrame();
         inicializarServicios();
         addBehaviour(new RecepcionMensajeBehaviour());
@@ -47,6 +50,8 @@ public class GuiAgente extends Agent {
 
         try {
             DFService.register(this, dfd);
+			System.out.println("Servicio " + dfd.getName() + " registrado correctamente");
+
         } catch (FIPAException fe) {
             fe.printStackTrace();
         }
@@ -77,13 +82,21 @@ public class GuiAgente extends Agent {
     }
 
     private class RecepcionMensajeBehaviour extends CyclicBehaviour {
-        public void action() {
+		private static final long serialVersionUID = -5336301168490360286L;
+
+		@SuppressWarnings("unchecked")
+		public void action() {
             ACLMessage msg = receive();
             if (msg != null) {
                 try {
-                    @SuppressWarnings("unchecked")
-                    ConcurrentHashMap<String, Integer> inventario = (ConcurrentHashMap<String, Integer>) msg.getContentObject();
-                    System.out.println("Mensaje recibido: " + inventario);
+                    
+        			Object[] mensaje = new Object[2];
+                    mensaje= (Object[]) msg.getContentObject();
+                    inventario = (ConcurrentHashMap<String, Integer>) mensaje[0];
+                    historialPedidos  =(ConcurrentHashMap<Integer, String>) mensaje[1];
+                    System.out.println("GuiAgente ha recibido el inventario: " + inventario);
+                    System.out.println("GuiAgente ha recibido el Historial Pedidos: " + historialPedidos);
+
                     actualizarInventario(inventario);
                 } catch (UnreadableException e) {
                     e.printStackTrace();
@@ -206,8 +219,8 @@ public class GuiAgente extends Agent {
         // Crear un panel para el mensaje de confirmación
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(new JLabel("Pedido realizado con éxito!"));
-        panel.add(new JLabel("¡Guarda bien el número! ID del pedido:"));
+        panel.add(new JLabel("Pedido realizado con Exito!"));
+        panel.add(new JLabel("�Guarda bien el numero! ID del pedido:"));
 
         JTextField idField = new JTextField(String.valueOf(idPedido));
         idField.setEditable(false);
@@ -218,16 +231,19 @@ public class GuiAgente extends Agent {
         JOptionPane.showMessageDialog(null, panel);
 
         // Enviar el pedido al TrataInfoAgente
-        enviarPedidoTrataInfoAgente(GuiAgente.getPedido());
+        enviarPedidoTrataInfoAgente(GuiAgente.getPedido(), idPedido);
 
         GuiAgente.setPedidoRealizado(true);
     }
 
-    private void enviarPedidoTrataInfoAgente(Map<String, Integer> pedido) {
+    private void enviarPedidoTrataInfoAgente(Map<String, Integer> pedido, int num) {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.addReceiver(new AID("TrataInfoAgente", AID.ISLOCALNAME));
         try {
-            msg.setContentObject((ConcurrentHashMap<String, Integer>) pedido);
+        	Object[] mensaje = new Object[2];
+        	mensaje[0] = num;
+        	mensaje[1] = pedido;
+            msg.setContentObject((Object[]) mensaje);
             send(msg);
             System.out.println("Pedido enviado a TrataInfoAgente: " + pedido);
         } catch (IOException e) {
@@ -258,7 +274,7 @@ public class GuiAgente extends Agent {
         try {
             msg.setContentObject(inventario);
             send(msg);
-            System.out.println("Mensaje de actualización de inventario enviado a LeeEscribeAlmacenAgente: " + inventario);
+            System.out.println("Mensaje de actualizacion de inventario enviado a LeeEscribeAlmacenAgente: " + inventario);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -282,8 +298,8 @@ public class GuiAgente extends Agent {
         System.out.println("Agente GuiAgente finalizado.");
     }
 
-    public static Map<String, Integer> getInventario() {
-        return inventario;
+    public static ConcurrentHashMap<String, Integer> getInventario() {
+        return GuiAgente.inventario;
     }
 
     public static void setInventario(ConcurrentHashMap<String, Integer> nuevoInventario) {
@@ -315,6 +331,6 @@ public class GuiAgente extends Agent {
     }
 
     public static void setPedidoRealizado(boolean pedidoRealizadoNuevo) {
-        pedidoRealizado = pedidoRealizadoNuevo;
+        GuiAgente.pedidoRealizado = pedidoRealizadoNuevo;
     }
 }

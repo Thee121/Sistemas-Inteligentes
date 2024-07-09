@@ -1,10 +1,10 @@
 Producto,Cantidad
-Mandarinas,66
-Arándanos,17
+Mandarinas,7
+Arándanos,7
 Papaya,10
-Cerezas,30
+Cerezas,12
 Limones,16
 Frambuesas,14
 Lichis,20
 Piña,14
-Manzanas,35
+Manzanas,21
