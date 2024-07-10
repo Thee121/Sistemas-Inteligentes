@@ -27,8 +27,9 @@ public class GuiAgente extends Agent {
     private static ConcurrentHashMap<String, Integer> pedido = new ConcurrentHashMap<>();
     private static Random random = new Random();
     private static boolean pedidoRealizado = false;
+    private static String codigoPedido = "";
 
-    private JFrame frame;
+    private static JFrame frame;
     private JPanel panelAux;
     private JPanel frutasPanel;
 
@@ -200,14 +201,50 @@ public class GuiAgente extends Agent {
                 e1.printStackTrace();
             }
         });
+		JPanel searchPanel = new JPanel();
+    	// Seccion busqueda de Pedido
+		JButton searchButton = new JButton("-->");
+		searchButton.setFont(new Font("Arial", Font.ITALIC, 10));
+		searchButton.setBackground(Color.YELLOW);
+		searchButton.addActionListener(e -> buscarPedido());
+		JLabel consultarLabel = new JLabel("Consulta Pedidos:");
+		
+		TextField pedidoField = new TextField(8);
+		pedidoField.addTextListener(e -> {
+			codigoPedido =(pedidoField.getText());
+		});
 
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(realizarPedidoButton, BorderLayout.CENTER);
-
-        frutasPanel.add(buttonPanel, BorderLayout.SOUTH);
+        searchPanel.add(consultarLabel);
+        searchPanel.add(searchButton);
+        searchPanel.add(pedidoField);
+        frutasPanel.add(buttonPanel, BorderLayout.EAST);
+        frutasPanel.add(searchPanel, BorderLayout.SOUTH);
         panelAux.revalidate();
         panelAux.repaint();
     }
+    
+	public static void buscarPedido() {
+		try {
+			int idPedido = Integer.parseInt(codigoPedido.trim());
+			if (historialPedidos.containsKey(idPedido)) {
+				String pedido = GuiAgente.historialPedidos.get(idPedido);
+				JOptionPane.showMessageDialog(frame, pedido, "Detalle del Pedido",
+						JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(frame, "No hay un pedido con el numero " + idPedido, "Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(frame,
+					"Por favor, introduce un numero valido. Solo se admiten digitos de 0-9", "Error",
+					JOptionPane.ERROR_MESSAGE);
+		} catch (NullPointerException e) {
+			JOptionPane.showMessageDialog(frame, "Por favor, introduce un numero de pedido.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
 
     private void realizarPedido() throws IOException {
         // Generar un ID de pedido único (puede ser útil para tracking interno, aunque no se use el historial aquí)
