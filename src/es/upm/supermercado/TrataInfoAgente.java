@@ -182,6 +182,35 @@ public class TrataInfoAgente extends Agent {
 		return inventario;
 	}
     
+	public static ConcurrentHashMap<Integer, String> LeeArchivoHistorial(String path) {
+		ConcurrentHashMap<Integer, String> historialPedido = new ConcurrentHashMap<>();
+		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+			String line;
+			br.readLine(); // Skip header
+	        StringBuilder sb = new StringBuilder();
+
+			while ((line = br.readLine()) != null) {
+				String[] parts = line.split(",");	        
+				int tam = parts.length;
+				Integer pedidoCodigo = Integer.parseInt(parts[0].trim());
+				
+				for(int i = 1; i<tam; i++) {
+					String pedidoHistorial = parts[i].trim();
+					sb.append(pedidoHistorial);
+					if(i!=tam) {
+						sb.append(", ");						
+					}
+				}
+				historialPedido.put(pedidoCodigo, sb.toString());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("TrataInfoAgente ha leido correctamente el historialPedido del archivo: " + historialPedido);
+
+		return historialPedido;
+	}
+    
     
     
     private ConcurrentHashMap<String, Integer> actualizarInventarioConPedido(ConcurrentHashMap<String, Integer> inventario, Map<String, Integer> pedido) {
@@ -214,14 +243,20 @@ public class TrataInfoAgente extends Agent {
 		try (FileWriter writer = new FileWriter(pathInventario)) {
 			writer.write("Codigo,Pedido\n");
 	        StringBuilder sb = new StringBuilder();
-	        sb.append(num);
 	        for (Entry<String, Integer> entry : inventario2.entrySet()) {
-	            sb.append(",").append(entry.getKey()).append(",").append(entry.getValue());
+	            sb.append(",");
+	            sb.append(entry.getKey());
+	            sb.append(":");
+	            sb.append(entry.getValue());
 	        }
-	        writer.write(sb.toString());
-			System.out.println("HistorialPedido guardado correctamente en el archivo");
+	        historialPedidos.put(num, sb.toString());
+	        writer.write(historialPedidos.toString());
+	        writer.write("\n");
+			System.out.println("HistorialPedido guardado correctamente en el archivo " + historialPedidos.toString());
 		}
 	}
+    
+    
 
 	protected void takeDown() {
 		System.out.println("Apagando Agente TrataInfo");

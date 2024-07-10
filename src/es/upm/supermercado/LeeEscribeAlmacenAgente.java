@@ -61,6 +61,7 @@ public class LeeEscribeAlmacenAgente extends Agent {
 			ACLMessage msg = receive();
 			if (msg != null) {
 				inventario = LeeArchivoAlmacen(pathInventario);
+				historialPedidos = LeeArchivoHistorial(pathHistorialPedidos);
 				enviarDatosAGuiAgente();
 			} else {
 				block();
@@ -131,11 +132,32 @@ public class LeeEscribeAlmacenAgente extends Agent {
 		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
 			String line;
 			br.readLine(); // Skip header
+	        StringBuilder sb = new StringBuilder();
+
 			while ((line = br.readLine()) != null) {
-				String[] parts = line.split(",");
-					Integer pedidoCodigo = Integer.parseInt(parts[0].trim());
-					String pedidoHistorial = parts[1].trim();
-					historialPedido.put(pedidoCodigo, pedidoHistorial);
+				String[] parts = line.split(",");	        
+				int tam = parts.length;
+				String valor = parts[0].trim();
+				for (int i = 0; i < valor.length(); i++)
+				{
+				    if (valor.charAt(i) =='=' || valor.charAt(i) =='{')
+				    {
+				        continue;
+				    }
+				    sb.append(valor.charAt(i));
+				}
+				valor = sb.toString();
+				Integer pedidoCodigo = Integer.parseInt(valor.trim());
+		        StringBuilder sb2 = new StringBuilder();
+
+				for(int i = 1; i<tam; i++) {
+					String pedidoHistorial = parts[i].trim();
+					sb2.append(pedidoHistorial);
+					if(i!=tam) {
+						sb2.append(", ");						
+					}
+				}
+				historialPedido.put(pedidoCodigo, sb2.toString());
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

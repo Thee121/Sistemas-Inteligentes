@@ -1,2 +1,2 @@
-Codigo, Pedido
-1231231, Mandarinas 7, Papaya 4
+Codigo,Pedido
+{544215203=,Frambuesas:22,Lichis:9,Piña:14}

@@ -1,2 +1,2 @@
 Codigo,Pedido
-1269086861,Mandarinas,5,Arándanos,14,Papaya,5,Cerezas,9,Limones,91,Lichis,0,Manzanas,67
+{1763262416=,Limones:3, 1867294368=,Limones:2,Piña:3}
