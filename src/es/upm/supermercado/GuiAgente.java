@@ -240,12 +240,14 @@ public class GuiAgente extends Agent {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.addReceiver(new AID("TrataInfoAgente", AID.ISLOCALNAME));
         try {
-        	Object[] mensaje = new Object[2];
+        	Object[] mensaje = new Object[3];
         	mensaje[0] = num;
         	mensaje[1] = pedido;
+        	mensaje[2] = historialPedidos;
             msg.setContentObject((Object[]) mensaje);
             send(msg);
             System.out.println("Pedido enviado a TrataInfoAgente: " + pedido);
+            pedido.clear();
         } catch (IOException e) {
             e.printStackTrace();
         }

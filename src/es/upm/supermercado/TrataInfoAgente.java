@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.swing.SwingUtilities;
-
 
 public class TrataInfoAgente extends Agent {
 	private static final long serialVersionUID = -5513148827856003070L;
@@ -94,17 +92,20 @@ public class TrataInfoAgente extends Agent {
 		 private class RecepcionMensajeBehaviour extends CyclicBehaviour {
 			private static final long serialVersionUID = 7157368655577734166L;
 
+				@SuppressWarnings("unchecked")
 				public void action() {
 		            ACLMessage msg = receive();
 		            if (msg != null) {
 		                try {
 		                    Object[] mensaje =  (Object[]) msg.getContentObject();
 		                    int num = (int) mensaje[0];
-		                    @SuppressWarnings("unchecked")
 							ConcurrentHashMap<String, Integer> inventario = (ConcurrentHashMap<String, Integer>) mensaje[1];
 		                	mensaje[0] = num;
 		                    guardarInventarioEnArchivo(pathInventario,actualizarInventarioConPedido(LeeArchivoAlmacen(pathInventario), inventario));
 		                    System.out.println("TrataInfoAgente ha recibido el pedido: " + inventario);
+		                    historialPedidos = (ConcurrentHashMap<Integer, String>) mensaje[2];
+		                    System.out.println("TrataInfoAgente ha recibido el historial de pedidos: " + historialPedidos);
+
 		                    guardarHistorialEnArchivo(pathHistorialPedidos,inventario, num);
 		                    enviarConfirmacion();
 		                } catch (UnreadableException e) {
@@ -193,10 +194,21 @@ public class TrataInfoAgente extends Agent {
 				String[] parts = line.split(",");	        
 				int tam = parts.length;
 				Integer pedidoCodigo = Integer.parseInt(parts[0].trim());
-				
+		        StringBuilder sb2 = new StringBuilder();
 				for(int i = 1; i<tam; i++) {
 					String pedidoHistorial = parts[i].trim();
-					sb.append(pedidoHistorial);
+					if(pedidoHistorial.contains("}")) {
+						for (int j = 0; j < pedidoHistorial.length(); i++)
+						{
+						    if (pedidoHistorial.charAt(j) =='}' )
+						    {
+						        continue;
+						    }
+						    sb2.append(pedidoHistorial.charAt(i));
+						}					}
+					
+					
+					sb.append(sb2);
 					if(i!=tam) {
 						sb.append(", ");						
 					}
@@ -248,10 +260,19 @@ public class TrataInfoAgente extends Agent {
 	            sb.append(entry.getKey());
 	            sb.append(":");
 	            sb.append(entry.getValue());
+	            
 	        }
 	        historialPedidos.put(num, sb.toString());
-	        writer.write(historialPedidos.toString());
-	        writer.write("\n");
+
+	        for (Entry<Integer, String> entry : historialPedidos.entrySet()) {
+	        	System.out.println("key:" + entry.getKey() + " value: " + entry.getValue());
+	        	if((entry.getValue().contains(",")) && (entry.getValue().equals(","))) {
+		        	writer.write(entry.getKey() + entry.getValue() + "\n");
+	        	} else {
+		        	writer.write(entry.getKey() + "," + entry.getValue() + "\n");
+
+	        	}
+	        }
 			System.out.println("HistorialPedido guardado correctamente en el archivo " + historialPedidos.toString());
 		}
 	}

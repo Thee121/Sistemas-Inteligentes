@@ -1,2 +1,9 @@
 Codigo,Pedido
-{544215203=,Frambuesas:22,Lichis:9,Piña:14}
+507093048,Lichis:1
+1858520021,Piña:2
+1314507052,,Frambuesas:3,Arándanos:6,Papaya:15
+1812427040,,Arándanos:8,Limones:1,Manzanas:5
+1455323300,,Lichis:2,Papaya:16,Cerezas:1,Manzanas:4
+1991083680,Frambuesas:13,Limones:1
+35415697,Lichis:2
+6931990,Papaya:52,Arándanos:15

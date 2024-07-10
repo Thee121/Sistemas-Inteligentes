@@ -3,14 +3,12 @@ package es.upm.supermercado;
 import jade.core.Agent;
 import jade.core.AID;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.UnreadableException;
 import jade.wrapper.AgentController;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.TickerBehaviour;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -90,7 +88,7 @@ public class LeeEscribeAlmacenAgente extends Agent {
 		dfdLeeEscribe = new DFAgentDescription();
 		dfdLeeEscribe.setName(getAID());
 
-		// Servicio para actualizar informaciÃ³n a TrataInfoAgente
+		// Servicio para actualizar información a TrataInfoAgente
 		sdTrataActualiza = new ServiceDescription();
 		sdTrataActualiza.setName("ActualizacionDesdeLee");
 		sdTrataActualiza.setType("TrasladoDesdeLee");
@@ -130,31 +128,35 @@ public class LeeEscribeAlmacenAgente extends Agent {
 	public static ConcurrentHashMap<Integer, String> LeeArchivoHistorial(String path) {
 		ConcurrentHashMap<Integer, String> historialPedido = new ConcurrentHashMap<>();
 		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-			String line;
+			String line;	
 			br.readLine(); // Skip header
-	        StringBuilder sb = new StringBuilder();
 
 			while ((line = br.readLine()) != null) {
-				String[] parts = line.split(",");	        
+				String[] parts = line.split(",");
 				int tam = parts.length;
 				String valor = parts[0].trim();
-				for (int i = 0; i < valor.length(); i++)
-				{
-				    if (valor.charAt(i) =='=' || valor.charAt(i) =='{')
-				    {
-				        continue;
-				    }
-				    sb.append(valor.charAt(i));
-				}
-				valor = sb.toString();
-				Integer pedidoCodigo = Integer.parseInt(valor.trim());
+				Integer pedidoCodigo = Integer.parseInt(valor);
 		        StringBuilder sb2 = new StringBuilder();
+		        StringBuilder sb3 = new StringBuilder();
+
 
 				for(int i = 1; i<tam; i++) {
 					String pedidoHistorial = parts[i].trim();
-					sb2.append(pedidoHistorial);
-					if(i!=tam) {
-						sb2.append(", ");						
+					if(pedidoHistorial.contains("}")) {
+						for(int j = 0; j<pedidoHistorial.length(); j++) {
+							if(pedidoHistorial.charAt(j) == '}') {
+								continue;
+							}
+							sb3.append(pedidoHistorial.charAt(j));
+						}
+					}
+					if(sb3.length() == 0) {
+						sb2.append(pedidoHistorial);
+					}else {
+						sb2.append(sb3);
+					}
+					if(i!=tam-1) {
+						sb2.append(",");						
 					}
 				}
 				historialPedido.put(pedidoCodigo, sb2.toString());
