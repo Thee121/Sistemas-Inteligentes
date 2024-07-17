@@ -1,1 +1,9 @@
 Codigo,Pedido
+1673879524,,Piña:21
+1021923339,,Mandarinas:15,Arándanos:25,Limones:3
+272318792,,Manzanas:96
+2134269685,,Cerezas:5,Lichis:19
+1041853884,,Cerezas:4,Limones:6,Piña:10
+1717649849,,Lichis:44,Cerezas:15,Limones:20,Piña:58
+186551909,,Frambuesas:48,Limones:27,Piña:67
+1569126489,,Papaya:75
